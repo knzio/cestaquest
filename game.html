@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Office Rogue - Jugando</title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.70.0/dist/phaser.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #1a472a 0%, #2d5a3d 50%, #1a472a 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Courier New', monospace;
+            color: #f5f5dc;
+            padding: 20px 10px;
+        }
+        
+        .game-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            width: 100%;
+            max-width: 820px;
+        }
+        
+        .game-title {
+            font-size: 32px;
+            color: #c41e3a;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            letter-spacing: 2px;
+            margin: 0;
+            text-align: center;
+        }
+        
+        #game-container {
+            border: 5px solid #c41e3a;
+            border-radius: 20px;
+            box-shadow: 0 0 30px rgba(196, 30, 58, 0.5), 
+                        0 0 60px rgba(196, 30, 58, 0.3),
+                        inset 0 0 20px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            background: #000;
+            width: 100%;
+            max-width: 800px;
+            height: 600px;
+            position: relative;
+        }
+        
+        #game-container canvas {
+            display: block;
+            width: 100% !important;
+            height: 100% !important;
+        }
+        
+        .decorations {
+            display: flex;
+            gap: 15px;
+            font-size: 24px;
+        }
+        
+        @keyframes twinkle {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .decorations span {
+            animation: twinkle 2s ease-in-out infinite;
+        }
+        
+        .decorations span:nth-child(2) {
+            animation-delay: 0.5s;
+        }
+        
+        .decorations span:nth-child(3) {
+            animation-delay: 1s;
+        }
+        
+        .decorations span:nth-child(4) {
+            animation-delay: 1.5s;
+        }
+        
+        /* Responsive para móviles */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px 5px;
+            }
+            
+            .game-wrapper {
+                gap: 10px;
+            }
+            
+            .game-title {
+                font-size: 24px;
+            }
+            
+            #game-container {
+                border-width: 3px;
+                border-radius: 15px;
+                height: calc(100vh - 180px);
+                min-height: 400px;
+            }
+            
+            .decorations {
+                font-size: 20px;
+                gap: 10px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            body {
+                padding: 5px;
+            }
+            
+            .game-title {
+                font-size: 20px;
+                letter-spacing: 1px;
+            }
+            
+            #game-container {
+                border-width: 2px;
+                border-radius: 10px;
+                height: calc(100vh - 150px);
+                min-height: 350px;
+            }
+            
+            .decorations {
+                font-size: 18px;
+                gap: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-wrapper">
+        <h1 class="game-title">🎄 Office Rogue 🎄</h1>
+        <div id="game-container"></div>
+        <div class="decorations">
+            <span>⭐</span>
+            <span>🎁</span>
+            <span>🎅</span>
+            <span>⭐</span>
+        </div>
+    </div>
+    <script src="js/game.js"></script>
+</body>
+</html>

@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Descargador de Twemoji - Office Rogue</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        
+        .button-container {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+        }
+        
+        .btn-download {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .btn-download:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-zip {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .btn-zip:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(245, 87, 108, 0.4);
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        #status {
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            background: #f8f9fa;
+            color: #333;
+        }
+        
+        #status.loading {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        #status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        #status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #e9ecef;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .progress-bar.active {
+            display: block;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        
+        #emojis {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        .emoji-item {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            background: #f8f9fa;
+            transition: all 0.3s ease;
+        }
+        
+        .emoji-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .emoji-item.success {
+            background: #d4edda;
+        }
+        
+        .emoji-item.error {
+            background: #f8d7da;
+        }
+        
+        .emoji-item img {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 10px;
+        }
+        
+        .emoji-item .label {
+            font-size: 12px;
+            font-weight: bold;
+            color: #333;
+            word-break: break-word;
+        }
+        
+        .emoji-item .code {
+            font-size: 10px;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .instructions {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .instructions h3 {
+            margin-top: 0;
+            color: #1976D2;
+        }
+        
+        .instructions ol {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Descargador de Emojis Twemoji</h1>
+        <p class="subtitle">Para Office Rogue Game</p>
+        
+        <div class="instructions">
+            <h3>📋 Instrucciones:</h3>
+            <ol>
+                <li>Haz clic en <strong>"Descargar ZIP"</strong> (recomendado)</li>
+                <li>Extrae el archivo <code>twemoji_emojis.zip</code></li>
+                <li>Coloca todos los archivos PNG en la carpeta <code>assets/emojis/</code> de tu proyecto</li>
+                <li>¡Listo! Ya puedes usar el juego con emojis de alta calidad</li>
+            </ol>
+        </div>
+        
+        <div class="button-container">
+            <button class="btn-zip" onclick="downloadAsZip()">
+                📦 Descargar ZIP (Recomendado)
+            </button>
+            <button class="btn-download" onclick="downloadIndividually()">
+                📥 Descargar Individualmente
+            </button>
+        </div>
+        
+        <div class="progress-bar" id="progressBar">
+            <div class="progress-fill" id="progressFill">0%</div>
+        </div>
+        
+        <div id="status">Selecciona una opción para comenzar</div>
+        
+        <div id="emojis"></div>
+    </div>
+
+    <!-- JSZip Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    
+    <script>
+        const EMOJIS = {
+            // Principales
+            'player': '🙂',
+            'player_hurt': '😵',
+            'exit': '🎄', // Árbol de Navidad (salida)
+            
+            // Iconos UI
+            'basket_icon': '🧺', // Icono de cesta para UI
+            'weapons_icon': '⚔️', // Espadas cruzadas para UI
+            'skull': '💀', // Calavera
+            'footprints': '👣', // Huellas
+            
+            // Contenedores
+            'gift': '🎁',
+            'box': '📦',
+            'snowman': '⛄',
+            'trash': '🗑️',
+            
+            // Items
+            'pencil': '✏️',
+            'keyboard': '⌨️',
+            'mouse': '🖱️',
+            'shield': '🛡️',
+            'coffee': '☕',
+            
+            // Cesta
+            'chocolate': '🍫',
+            'champagne': '🍾',
+            'meat': '🍖',
+            'cheese': '🧀',
+            'candy': '🍬',
+            'mooncake': '🥮',
+            
+            // Enemigos
+            'gem': '💎',
+            'ufo': '🛸',
+            'robot': '🤖',
+            'sparkle_green': '✳️',
+            'whale': '🐋',
+            'apple': '🍎',
+            'hole': '🕳️',
+            
+            // Partículas
+            'sparkle': '✨',
+            'dizzy': '💫',
+            'star': '⭐',
+            
+            // UI
+            'cross': '✖️'
+        };
+
+        let downloadedBlobs = {};
+        let isDownloading = false;
+
+        function getCodePoint(emoji) {
+            const codes = [];
+            for (let i = 0; i < emoji.length; i++) {
+                const code = emoji.codePointAt(i);
+                // Ignorar variation selector (️) y zero-width joiner
+                if (code !== 0xFE0F && code !== 0x200D) {
+                    codes.push(code.toString(16));
+                }
+                // Saltar surrogate pair
+                if (code > 0xFFFF) i++;
+            }
+            return codes.join('-');
+        }
+
+        function updateProgress(current, total) {
+            const percent = Math.round((current / total) * 100);
+            const progressBar = document.getElementById('progressBar');
+            const progressFill = document.getElementById('progressFill');
+            
+            progressBar.classList.add('active');
+            progressFill.style.width = percent + '%';
+            progressFill.textContent = percent + '%';
+        }
+
+        function setStatus(message, type = '') {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = type;
+        }
+
+        async function fetchEmoji(key, emoji) {
+            const codePoint = getCodePoint(emoji);
+            const url = `https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/72x72/${codePoint}.png`;
+            
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const blob = await response.blob();
+                
+                // Verificar que el blob es válido
+                if (blob.size === 0) {
+                    throw new Error('Archivo vacío');
+                }
+                
+                return { key, emoji, codePoint, blob, success: true };
+                
+            } catch (error) {
+                console.error(`Error descargando ${key}:`, error);
+                return { key, emoji, codePoint, success: false, error: error.message };
+            }
+        }
+
+        function displayEmoji(result) {
+            const emojiContainer = document.getElementById('emojis');
+            const div = document.createElement('div');
+            div.className = `emoji-item ${result.success ? 'success' : 'error'}`;
+            
+            if (result.success && result.blob) {
+                const img = document.createElement('img');
+                img.src = URL.createObjectURL(result.blob);
+                img.alt = result.key;
+                div.appendChild(img);
+            } else {
+                const errorIcon = document.createElement('div');
+                errorIcon.textContent = '❌';
+                errorIcon.style.fontSize = '48px';
+                div.appendChild(errorIcon);
+            }
+            
+            const label = document.createElement('div');
+            label.className = 'label';
+            label.textContent = result.key;
+            div.appendChild(label);
+            
+            const code = document.createElement('div');
+            code.className = 'code';
+            code.textContent = result.success ? `✓ ${result.codePoint}` : `✗ ${result.error}`;
+            div.appendChild(code);
+            
+            emojiContainer.appendChild(div);
+        }
+
+        async function downloadAsZip() {
+            if (isDownloading) return;
+            
+            isDownloading = true;
+            setStatus('Descargando emojis...', 'loading');
+            document.getElementById('emojis').innerHTML = '';
+            document.getElementById('progressBar').classList.add('active');
+            
+            const entries = Object.entries(EMOJIS);
+            const total = entries.length;
+            let current = 0;
+            const results = [];
+            
+            // Descargar todos los emojis
+            for (const [key, emoji] of entries) {
+                current++;
+                updateProgress(current, total);
+                setStatus(`Descargando: ${key} ${emoji} (${current}/${total})`, 'loading');
+                
+                const result = await fetchEmoji(key, emoji);
+                results.push(result);
+                displayEmoji(result);
+                
+                // Pequeña pausa para no saturar el servidor
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            
+            // Crear ZIP
+            const successful = results.filter(r => r.success);
+            const failed = results.filter(r => !r.success);
+            
+            if (successful.length === 0) {
+                setStatus('❌ Error: No se pudo descargar ningún emoji', 'error');
+                isDownloading = false;
+                return;
+            }
+            
+            setStatus('Creando archivo ZIP...', 'loading');
+            
+            const zip = new JSZip();
+            
+            for (const result of successful) {
+                zip.file(`${result.key}.png`, result.blob);
+            }
+            
+            // Generar y descargar ZIP
+            try {
+                const content = await zip.generateAsync({
+                    type: 'blob',
+                    compression: 'DEFLATE',
+                    compressionOptions: { level: 6 }
+                });
+                
+                saveAs(content, 'twemoji_emojis.zip');
+                
+                let statusMsg = `✅ ¡Completado! ${successful.length}/${total} emojis descargados en ZIP`;
+                if (failed.length > 0) {
+                    statusMsg += `\n⚠️ ${failed.length} emojis fallaron`;
+                }
+                setStatus(statusMsg, 'success');
+                
+            } catch (error) {
+                setStatus('❌ Error al crear el ZIP: ' + error.message, 'error');
+            }
+            
+            isDownloading = false;
+            document.getElementById('progressBar').classList.remove('active');
+        }
+
+        async function downloadIndividually() {
+            if (isDownloading) return;
+            
+            const confirmDownload = confirm(
+                '⚠️ Esto descargará ' + Object.keys(EMOJIS).length + ' archivos individuales.\n\n' +
+                'Puede que tu navegador bloquee las descargas múltiples.\n\n' +
+                'Se recomienda usar la opción "Descargar ZIP" en su lugar.\n\n' +
+                '¿Continuar de todas formas?'
+            );
+            
+            if (!confirmDownload) return;
+            
+            isDownloading = true;
+            setStatus('Descargando emojis individualmente...', 'loading');
+            document.getElementById('emojis').innerHTML = '';
+            document.getElementById('progressBar').classList.add('active');
+            
+            const entries = Object.entries(EMOJIS);
+            const total = entries.length;
+            let current = 0;
+            const results = [];
+            
+            for (const [key, emoji] of entries) {
+                current++;
+                updateProgress(current, total);
+                setStatus(`Descargando: ${key} ${emoji} (${current}/${total})`, 'loading');
+                
+                const result = await fetchEmoji(key, emoji);
+                results.push(result);
+                displayEmoji(result);
+                
+                if (result.success) {
+                    // Descargar archivo individual
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(result.blob);
+                    link.download = `${key}.png`;
+                    link.click();
+                }
+                
+                // Pausa entre descargas
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+            
+            const successful = results.filter(r => r.success).length;
+            const failed = results.filter(r => !r.success).length;
+            
+            let statusMsg = `✅ Completado! ${successful}/${total} emojis descargados`;
+            if (failed > 0) {
+                statusMsg += `\n⚠️ ${failed} emojis fallaron`;
+            }
+            setStatus(statusMsg, 'success');
+            
+            isDownloading = false;
+            document.getElementById('progressBar').classList.remove('active');
+        }
+
+        // Log para debugging
+        console.log('📊 Emojis a descargar:', Object.keys(EMOJIS).length);
+        console.log('📋 Lista completa:', EMOJIS);
+    </script>
+</body>
+</html>
