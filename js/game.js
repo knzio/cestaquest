@@ -2,6 +2,17 @@
 // CONFIGURACIÓN Y CONSTANTES
 // ============================================
 
+// Variables globales de pantalla
+
+const gameContainer = document.getElementById('game-container');
+
+const SCREEN_WIDTH = gameContainer.clientWidth;
+const SCREEN_HEIGHT = gameContainer.clientHeight;
+//const SCREEN_WIDTH = window.innerWidth;
+//const SCREEN_HEIGHT = window.innerHeight;
+const IS_MOBILE = SCREEN_WIDTH < 768;
+const IS_SMALL_MOBILE = SCREEN_WIDTH < 480;
+
 const TILE_SIZE = 48;
 // Límites de la mazmorra (Tamaño aleatorio)
 const MIN_MAP_SIZE = 30;
@@ -1149,9 +1160,9 @@ class GameScene extends Phaser.Scene {
         this.fogGraphics.clear();
 
         const startX = Math.max(0, Math.floor(this.cameras.main.scrollX / TILE_SIZE));
-        const endX = Math.min(this.mapWidth, Math.ceil((this.cameras.main.scrollX + 800) / TILE_SIZE));
+        const endX = Math.min(this.mapWidth, Math.ceil((this.cameras.main.scrollX + SCREEN_WIDTH) / TILE_SIZE));
         const startY = Math.max(0, Math.floor(this.cameras.main.scrollY / TILE_SIZE));
-        const endY = Math.min(this.mapHeight, Math.ceil((this.cameras.main.scrollY + 600) / TILE_SIZE));
+        const endY = Math.min(this.mapHeight, Math.ceil((this.cameras.main.scrollY + SCREEN_HEIGHT) / TILE_SIZE));
 
         // Dibujar tiles con sistema de visión
         for (let y = startY; y < endY; y++) {
@@ -1234,35 +1245,43 @@ class GameScene extends Phaser.Scene {
         this.healthBarGraphics.setScrollFactor(0);
         this.healthBarGraphics.setDepth(100);
 
-        this.logText = this.add.text(10, 550, '', {
-            fontSize: '14px',
+        // Posición del log adaptada a móvil
+        const logY = IS_MOBILE ? SCREEN_HEIGHT - 120 : SCREEN_HEIGHT - 50;
+        const logWidth = IS_MOBILE ? SCREEN_WIDTH - 20 : 600;
+        const logFontSize = IS_SMALL_MOBILE ? '11px' : (IS_MOBILE ? '12px' : '14px');
+        
+        this.logText = this.add.text(10, logY, '', {
+            fontSize: logFontSize,
             fill: '#333333',
             backgroundColor: '#FFFFF4E0',
-            padding: { x: 10, y: 5 },
-            wordWrap: { width: 600 }
+            padding: { x: IS_MOBILE ? 5 : 10, y: 5 },
+            wordWrap: { width: logWidth }
         });
         this.logText.setScrollFactor(0);
         this.logText.setDepth(100);
 
         // Emoji del jugador en UI usando Twemoji
+        const emojiSize = IS_SMALL_MOBILE ? 24 : (IS_MOBILE ? 28 : 32);
         this.playerHealthEmoji = this.add.sprite(0, 0, 'emoji_player');
-        this.playerHealthEmoji.setDisplaySize(32, 32);
+        this.playerHealthEmoji.setDisplaySize(emojiSize, emojiSize);
         this.playerHealthEmoji.setOrigin(0, 0.5);
         this.playerHealthEmoji.setScrollFactor(0);
         this.playerHealthEmoji.setDepth(101);
 
+        const xpFontSize = IS_SMALL_MOBILE ? '14px' : (IS_MOBILE ? '16px' : '20px');
         this.xpText = this.add.text(0, 0, '', {
-            fontSize: '20px',
+            fontSize: xpFontSize,
             fill: '#C41E3A',
             fontStyle: 'bold',
             stroke: '#FFD700',
-            strokeThickness: 2
+            strokeThickness: IS_MOBILE ? 1 : 2
         });
         this.xpText.setScrollFactor(0);
         this.xpText.setDepth(101);
 
+        const enemyEmojiFontSize = IS_SMALL_MOBILE ? '20px' : (IS_MOBILE ? '24px' : '28px');
         this.enemyHealthEmoji = this.add.text(0, 0, '', {
-            fontSize: '28px',
+            fontSize: enemyEmojiFontSize,
             lineSpacing: 0,
             padding: { top: 8, bottom: 2 }
         });
@@ -1274,23 +1293,31 @@ class GameScene extends Phaser.Scene {
         this.equippedGearTexts = [];
         this.basketItemsTexts = [];
         
-        // Icono de CESTA (izquierda superior)
-        this.basketIcon = this.add.sprite(35, 78, 'emoji_basket_icon');
-        this.basketIcon.setDisplaySize(40, 40);
+        // Iconos adaptados a móvil
+        const iconSize = IS_SMALL_MOBILE ? 30 : (IS_MOBILE ? 35 : 40);
+        const basketIconX = IS_MOBILE ? 20 : 35;
+        const basketIconY = IS_MOBILE ? SCREEN_HEIGHT - 190 : 78;
+        
+        // Icono de CESTA (posición adaptada)
+        this.basketIcon = this.add.sprite(basketIconX, basketIconY, 'emoji_basket_icon');
+        this.basketIcon.setDisplaySize(iconSize, iconSize);
         this.basketIcon.setScrollFactor(0);
         this.basketIcon.setDepth(101);
         
-        // Icono de EQUIPAMIENTO (derecha superior)
-        this.equipmentIcon = this.add.sprite(765, 78, 'emoji_weapons_icon');
-        this.equipmentIcon.setDisplaySize(40, 40);
+        // Icono de EQUIPAMIENTO (posición adaptada)
+        const equipIconX = IS_MOBILE ? SCREEN_WIDTH - 20 : SCREEN_WIDTH - 35;
+        const equipIconY = IS_MOBILE ? SCREEN_HEIGHT - 190 : 78;
+        this.equipmentIcon = this.add.sprite(equipIconX, equipIconY, 'emoji_weapons_icon');
+        this.equipmentIcon.setDisplaySize(iconSize, iconSize);
         this.equipmentIcon.setScrollFactor(0);
         this.equipmentIcon.setDepth(101);
         
+        const statsFontSize = IS_SMALL_MOBILE ? '12px' : (IS_MOBILE ? '14px' : '16px');
         this.statsText = this.add.text(0, 0, '', {
-            fontSize: '16px',
+            fontSize: statsFontSize,
             fill: '#333333',
             backgroundColor: '#FFFFF4CC',
-            padding: { x: 5, y: 3 }
+            padding: { x: IS_MOBILE ? 3 : 5, y: 3 }
         });
         this.statsText.setScrollFactor(0);
         this.statsText.setDepth(101);
@@ -1301,16 +1328,18 @@ class GameScene extends Phaser.Scene {
     updateUI() {
         this.healthBarGraphics.clear();
 
-        const tileSize = 24;
-        const gameWidth = 800;
+        // Tamaños adaptados a la pantalla
+        const tileSize = IS_SMALL_MOBILE ? 16 : (IS_MOBILE ? 20 : 24);
+        const gameWidth = SCREEN_WIDTH;
         const playerBarWidth = this.player.maxHp * (tileSize + 2);
         const playerStartX = (gameWidth - playerBarWidth) / 2;
         const playerY = 15;
 
-        this.playerHealthEmoji.setPosition(playerStartX - 45, playerY + 10);
+        const emojiOffset = IS_SMALL_MOBILE ? 30 : (IS_MOBILE ? 35 : 45);
+        this.playerHealthEmoji.setPosition(playerStartX - emojiOffset, playerY + tileSize/2);
 
         this.xpText.setText(`⭐ ${this.player.xp}/${this.player.xpToNextLevel} (${this.player.skillPoints})`);
-        this.xpText.setPosition(playerStartX + playerBarWidth + 10, playerY + 2);
+        this.xpText.setPosition(playerStartX + playerBarWidth + (IS_MOBILE ? 5 : 10), playerY + 2);
 
         for (let i = 0; i < this.player.maxHp; i++) {
             const x = playerStartX + i * (tileSize + 2);
@@ -1318,9 +1347,11 @@ class GameScene extends Phaser.Scene {
             this.healthBarGraphics.fillRoundedRect(x, playerY, tileSize, tileSize, 4);
         }
 
-        const equipmentX = gameWidth - 150; 
+        // Posición de stats adaptada
+        const equipmentX = IS_MOBILE ? SCREEN_WIDTH - 80 : SCREEN_WIDTH - 150; 
+        const statsY = IS_MOBILE ? SCREEN_HEIGHT - 250 : 60;
         
-        this.statsText.setPosition(equipmentX, 60);
+        this.statsText.setPosition(equipmentX, statsY);
         this.statsText.setText(
             `ATK: ${this.player.currentAttack}\nDEF: ${this.player.currentDefense}\nHP: ${this.player.hp}/${this.player.maxHp}`
         );
@@ -1335,8 +1366,10 @@ class GameScene extends Phaser.Scene {
             }
             this.equippedGearTexts = [];
 
-            const equipmentIconX = 765; // Centrado con el icono
-            const equipmentStartY = 120; // Empezar debajo del icono
+            const itemSize = IS_SMALL_MOBILE ? 28 : (IS_MOBILE ? 32 : 36);
+            const equipmentIconX = IS_MOBILE ? SCREEN_WIDTH - 20 : SCREEN_WIDTH - 35;
+            const equipmentStartY = IS_MOBILE ? SCREEN_HEIGHT - 150 : 120;
+            const itemSpacing = IS_SMALL_MOBILE ? 38 : (IS_MOBILE ? 42 : 50);
             
             for (let i = 0; i < equipLength; i++) {
                 const item = this.equippedGear[i];
@@ -1345,17 +1378,18 @@ class GameScene extends Phaser.Scene {
                 if (item.emojiKey && this.textures.exists(`emoji_${item.emojiKey}`)) {
                     itemSprite = this.add.sprite(
                         equipmentIconX,
-                        equipmentStartY + i * 50,
+                        equipmentStartY + i * itemSpacing,
                         `emoji_${item.emojiKey}`
                     );
-                    itemSprite.setDisplaySize(36, 36);
+                    itemSprite.setDisplaySize(itemSize, itemSize);
                 } else {
+                    const fontSize = IS_SMALL_MOBILE ? '28px' : (IS_MOBILE ? '32px' : '36px');
                     itemSprite = this.add.text(
                         equipmentIconX,
-                        equipmentStartY + i * 50,
+                        equipmentStartY + i * itemSpacing,
                         item.emoji,
                         { 
-                            fontSize: '36px',
+                            fontSize: fontSize,
                             lineSpacing: 0,
                             padding: { top: 8, bottom: 2 }
                         }
@@ -1379,8 +1413,10 @@ class GameScene extends Phaser.Scene {
             }
             this.basketItemsTexts = [];
 
-            const basketX = 35; // Centrado con el icono
-            const basketStartY = 120; // Empezar debajo del icono
+            const itemSize = IS_SMALL_MOBILE ? 28 : (IS_MOBILE ? 32 : 36);
+            const basketX = IS_MOBILE ? 20 : 35;
+            const basketStartY = IS_MOBILE ? SCREEN_HEIGHT - 150 : 120;
+            const itemSpacing = IS_SMALL_MOBILE ? 38 : (IS_MOBILE ? 42 : 50);
             
             for (let i = 0; i < basketLength; i++) {
                 const item = this.basketItems[i];
@@ -1389,17 +1425,18 @@ class GameScene extends Phaser.Scene {
                 if (item.emojiKey && this.textures.exists(`emoji_${item.emojiKey}`)) {
                     itemSprite = this.add.sprite(
                         basketX,
-                        basketStartY + i * 50,
+                        basketStartY + i * itemSpacing,
                         `emoji_${item.emojiKey}`
                     );
-                    itemSprite.setDisplaySize(36, 36);
+                    itemSprite.setDisplaySize(itemSize, itemSize);
                 } else {
+                    const fontSize = IS_SMALL_MOBILE ? '28px' : (IS_MOBILE ? '32px' : '36px');
                     itemSprite = this.add.text(
                         basketX,
-                        basketStartY + i * 50,
+                        basketStartY + i * itemSpacing,
                         item.emoji,
                         { 
-                            fontSize: '36px',
+                            fontSize: fontSize,
                             lineSpacing: 0,
                             padding: { top: 8, bottom: 2 }
                         }
@@ -1414,12 +1451,13 @@ class GameScene extends Phaser.Scene {
         }
 
         if (this.enemyInCombat) {
-            const enemyY = playerY + tileSize + 15;
+            const enemyY = playerY + tileSize + (IS_MOBILE ? 10 : 15);
             const enemyBarWidth = this.enemyInCombat.maxHp * (tileSize + 2);
             const enemyStartX = (gameWidth - enemyBarWidth) / 2;
 
             this.enemyHealthEmoji.setText(this.enemyInCombat.emoji);
-            this.enemyHealthEmoji.setPosition(enemyStartX - 40, enemyY + 8);
+            const enemyEmojiOffset = IS_SMALL_MOBILE ? 25 : (IS_MOBILE ? 30 : 40);
+            this.enemyHealthEmoji.setPosition(enemyStartX - enemyEmojiOffset, enemyY + tileSize/2);
             this.enemyHealthEmoji.setVisible(true);
 
             for (let i = 0; i < this.enemyInCombat.maxHp; i++) {
@@ -1487,42 +1525,54 @@ class GameScene extends Phaser.Scene {
         // Overlay oscuro (sin interacción)
         const overlay = this.add.graphics();
         overlay.fillStyle(0x000000, 0.85);
-        overlay.fillRect(0, 0, 800, 600);
+        overlay.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
         overlay.setScrollFactor(0);
         overlay.setDepth(1000);
-        overlay.setInteractive(new Phaser.Geom.Rectangle(0, 0, 800, 600), Phaser.Geom.Rectangle.Contains);
+        overlay.setInteractive(new Phaser.Geom.Rectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT), Phaser.Geom.Rectangle.Contains);
         // Importante: hacer que el overlay NO bloquee los clics de sus hijos
         overlay.disableInteractive();
         
+        // Tamaños responsive
+        const titleFontSize = IS_SMALL_MOBILE ? '28px' : (IS_MOBILE ? '36px' : '56px');
+        const dateFontSize = IS_SMALL_MOBILE ? '14px' : (IS_MOBILE ? '18px' : '24px');
+        const iconSize = IS_SMALL_MOBILE ? 32 : (IS_MOBILE ? 40 : 48);
+        const spacing = IS_SMALL_MOBILE ? 40 : (IS_MOBILE ? 50 : 60);
+        const healthFontSize = IS_SMALL_MOBILE ? '20px' : (IS_MOBILE ? '26px' : '32px');
+        const countdownFontSize = IS_SMALL_MOBILE ? '12px' : (IS_MOBILE ? '14px' : '18px');
+        const buttonFontSize = IS_SMALL_MOBILE ? '16px' : (IS_MOBILE ? '18px' : '24px');
+        const stepsFontSize = IS_SMALL_MOBILE ? '20px' : (IS_MOBILE ? '24px' : '28px');
+        
         // Contenedor principal
-        const container = this.add.container(400, 300);
+        const containerX = SCREEN_WIDTH / 2;
+        const containerY = SCREEN_HEIGHT / 2;
+        const container = this.add.container(containerX, containerY);
         container.setScrollFactor(0);
         container.setDepth(1001);
         
         // Título del juego
-        const title = this.add.text(0, -220, 'CESTAQUEST', {
-            fontSize: '56px',
+        const titleY = IS_MOBILE ? -SCREEN_HEIGHT * 0.35 : -220;
+        const title = this.add.text(0, titleY, 'CESTAQUEST', {
+            fontSize: titleFontSize,
             fill: '#FFFFFF',
             fontStyle: 'bold',
             stroke: '#C41E3A',
-            strokeThickness: 6
+            strokeThickness: IS_MOBILE ? 3 : 6
         });
         title.setOrigin(0.5);
         container.add(title);
         
         // Fecha
         const today = new Date();
-        const dateText = this.add.text(0, -170, today.toLocaleDateString('es-ES'), {
-            fontSize: '24px',
+        const dateY = IS_MOBILE ? titleY + 40 : -170;
+        const dateText = this.add.text(0, dateY, today.toLocaleDateString('es-ES'), {
+            fontSize: dateFontSize,
             fill: '#FFD700'
         });
         dateText.setOrigin(0.5);
         container.add(dateText);
         
         // Línea 1: Estado del héroe (CENTRADO)
-        let yPos = -110;
-        const iconSize = 48;
-        const spacing = 60; // Espaciado entre elementos
+        let yPos = IS_MOBILE ? dateY + 50 : -110;
         
         // Calcular ancho total para centrar
         let totalWidth;
@@ -1576,28 +1626,28 @@ class GameScene extends Phaser.Scene {
         xOffset += iconSize + 10;
         
         const stepsText = this.add.text(xOffset, yPos, this.steps.toString(), {
-            fontSize: '28px',
+            fontSize: stepsFontSize,
             fill: '#FFFFFF',
             fontStyle: 'bold'
         });
         stepsText.setOrigin(0, 0.5);
         container.add(stepsText);
         
-        // Línea 2: Barra de vida (escala 0-5) - YA ESTÁ CENTRADA
-        yPos = -40;
+        // Línea 2: Barra de vida (escala 0-5)
+        yPos += IS_MOBILE ? 60 : 70;
         const healthScale = Math.max(0, Math.ceil((this.player.hp / this.player.maxHp) * 5));
         let healthBar = '';
         for (let i = 0; i < 5; i++) {
             healthBar += i < healthScale ? '🟩' : '⬜';
         }
         const healthText = this.add.text(0, yPos, healthBar, {
-            fontSize: '32px'
+            fontSize: healthFontSize
         });
         healthText.setOrigin(0.5);
         container.add(healthText);
         
         // Línea 3: Enemigos derrotados (CENTRADO)
-        yPos = 30;
+        yPos += IS_MOBILE ? 60 : 70;
         
         // Calcular ancho total de los enemigos
         const numEnemies = Math.min(this.defeatedEnemies.length, 6);
@@ -1621,8 +1671,9 @@ class GameScene extends Phaser.Scene {
                     enemySprite = this.add.sprite(enemyXOffset + iconSize/2, yPos, `emoji_${enemy.emojiKey}`);
                     enemySprite.setDisplaySize(iconSize, iconSize);
                 } else {
+                    const enemyEmojiFontSize = IS_SMALL_MOBILE ? '32px' : (IS_MOBILE ? '36px' : '42px');
                     enemySprite = this.add.text(enemyXOffset + iconSize/2, yPos, enemy.emoji, {
-                        fontSize: '42px'
+                        fontSize: enemyEmojiFontSize
                     });
                     enemySprite.setOrigin(0.5);
                 }
@@ -1632,7 +1683,7 @@ class GameScene extends Phaser.Scene {
         });
         
         // Cuenta atrás para el próximo día
-        yPos = 100;
+        yPos += IS_MOBILE ? 60 : 70;
         const midnight = new Date();
         midnight.setHours(24, 0, 0, 0);
         const timeUntilMidnight = midnight.getTime() - Date.now();
@@ -1642,7 +1693,7 @@ class GameScene extends Phaser.Scene {
         
         const countdownText = this.add.text(0, yPos, 
             `Nueva mazmorra en: ${hours}h ${minutes}m ${seconds}s`, {
-            fontSize: '18px',
+            fontSize: countdownFontSize,
             fill: '#FFD700'
         });
         countdownText.setOrigin(0.5);
@@ -1667,25 +1718,20 @@ class GameScene extends Phaser.Scene {
         });
         
         // Botón de compartir (FUERA DEL CONTAINER para evitar problemas)
-        yPos = 160;
-        const shareButton = this.add.text(400, 300 + yPos, '📋 COMPARTIR RESULTADO', {
-            fontSize: '24px',
+        yPos += IS_MOBILE ? 50 : 60;
+        const buttonPadding = IS_MOBILE ? { x: 15, y: 8 } : { x: 20, y: 10 };
+        const shareButton = this.add.text(containerX, containerY + yPos, '📋 COMPARTIR RESULTADO', {
+            fontSize: buttonFontSize,
             fill: '#FFFFFF',
             backgroundColor: '#C41E3A',
-            padding: { x: 20, y: 10 }
+            padding: buttonPadding
         });
         shareButton.setOrigin(0.5);
         shareButton.setScrollFactor(0);
         shareButton.setDepth(1002);
         shareButton.setInteractive({ useHandCursor: true });
         
-        // Debug: verificar que el botón está interactivo
-        console.log('🔍 Botón creado:', shareButton);
-        console.log('🔍 Botón interactivo:', shareButton.input);
-        console.log('🔍 Posición botón:', shareButton.x, shareButton.y);
-        
         shareButton.on('pointerdown', () => {
-            console.log('🖱️ Click detectado en botón compartir');
             this.copyResultToClipboard(won);
             shareButton.setText('✅ ¡COPIADO!');
             this.time.delayedCall(2000, () => {
@@ -1694,12 +1740,10 @@ class GameScene extends Phaser.Scene {
         });
         
         shareButton.on('pointerover', () => {
-            console.log('🖱️ Hover sobre botón');
             shareButton.setScale(1.05);
         });
         
         shareButton.on('pointerout', () => {
-            console.log('🖱️ Hover fuera del botón');
             shareButton.setScale(1);
         });
     }
@@ -1820,15 +1864,16 @@ class GameScene extends Phaser.Scene {
 
 const config = {
     type: Phaser.AUTO,
-    width: 800,
-    height: 600,
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT,
     parent: 'game-container',
     backgroundColor: '#FFFFFF', 
     scene: [GameScene],
-    pixelArt: false,	// ← Cambiado para mejor suavizado de imágenes
-	scale: {
-		mode: Phaser.Scale.FIT,
-	}
+    pixelArt: false,
+    scale: {
+        mode: Phaser.Scale.RESIZE,
+        autoCenter: Phaser.Scale.CENTER_BOTH
+    }
 };
 
 const game = new Phaser.Game(config);
