@@ -471,7 +471,22 @@ class GameScene extends Phaser.Scene {
         const shuffledItems = this.random.shuffle(itemsToPlace);
         
         for (let i = 0; i < numContainers; i++) {
-            const pos = generator.getRandomFloorTile();
+            let pos;
+            let attempts = 0;
+            const maxAttempts = 50;
+            
+            // Buscar una posición que no esté ocupada por otro contenedor
+            do {
+                pos = generator.getRandomFloorTile();
+                attempts++;
+                
+                // Verificar si ya hay un contenedor en esta posición
+                const occupied = this.containers.some(c => c.x === pos.x && c.y === pos.y);
+                
+                if (!occupied) break;
+            } while (attempts < maxAttempts);
+            
+            // Si después de muchos intentos no encontramos posición, usar la última de todos modos
             const containerType = CONTAINER_TYPES[this.random.nextInt(0, CONTAINER_TYPES.length - 1)];
             
             let containerData = {
@@ -556,16 +571,18 @@ class GameScene extends Phaser.Scene {
     // CREACIÓN DE ENTIDADES (CON TWEMOJI)
     // ============================================
     createEntities() {
-        // Jugador (usando Twemoji)
+        // Jugador (usando Twemoji) - depth más alto para estar siempre encima
         this.entitySprites.player = this.add.sprite(0, 0, 'emoji_player');
         this.entitySprites.player.setDisplaySize(36, 36);
         this.entitySprites.player.setOrigin(0.5, 0.5);
+        this.entitySprites.player.setDepth(10); // Jugador siempre encima de items
 
         // Salida (usando Twemoji) - Inicialmente invisible
         this.entitySprites.exit = this.add.sprite(0, 0, 'emoji_exit');
         this.entitySprites.exit.setDisplaySize(40, 40); // Árbol un poco más grande
         this.entitySprites.exit.setOrigin(0.5, 0.5);
         this.entitySprites.exit.setVisible(false); // Invisible hasta completar cesta
+        this.entitySprites.exit.setDepth(5);
 
         // Contenedores (usando Twemoji)
         this.entitySprites.containers = {};
@@ -574,6 +591,7 @@ class GameScene extends Phaser.Scene {
             sprite.setDisplaySize(33, 33);
             sprite.setOrigin(0.5, 0.5);
             sprite.setVisible(false);
+            sprite.setDepth(2);
             this.entitySprites.containers[container.id] = sprite;
         });
 
@@ -602,6 +620,7 @@ class GameScene extends Phaser.Scene {
                 sprite.setOrigin(0.5, 0.5);
             }
             sprite.setVisible(false);
+            sprite.setDepth(3);
             this.entitySprites.enemies[enemy.id] = sprite;
         });
         
@@ -631,6 +650,7 @@ class GameScene extends Phaser.Scene {
             itemSprite.setOrigin(0.5, 0.5);
         }
         
+        itemSprite.setDepth(1); // Items debajo del jugador
         this.entitySprites.items.add(itemSprite);
         item.sprite = itemSprite; 
     }
@@ -929,6 +949,7 @@ class GameScene extends Phaser.Scene {
             if (newX >= 0 && newX < this.mapWidth && newY >= 0 && newY < this.mapHeight && this.map[newY][newX] === TILE.FLOOR) {
                 let blocked = false;
                 
+                // Verificar colisión con otros enemigos
                 for (let j = 0; j < this.enemies.length; j++) {
                     if (i !== j && this.enemies[j].x === newX && this.enemies[j].y === newY) {
                         blocked = true;
@@ -936,9 +957,20 @@ class GameScene extends Phaser.Scene {
                     }
                 }
                 
+                // Verificar colisión con contenedores
                 if (!blocked) {
                     for (const container of this.containers) {
                         if (container.x === newX && container.y === newY) {
+                            blocked = true;
+                            break;
+                        }
+                    }
+                }
+                
+                // Verificar colisión con items en el suelo
+                if (!blocked) {
+                    for (const item of this.items) {
+                        if (item.x === newX && item.y === newY) {
                             blocked = true;
                             break;
                         }
@@ -1157,12 +1189,12 @@ class GameScene extends Phaser.Scene {
         this.lastVirtualUp = false;
         this.lastVirtualDown = false;
         
-        // Tamaño de los botones según el dispositivo
-        const buttonSize = IS_SMALL_MOBILE ? 60 : 70;
-        const buttonSpacing = IS_SMALL_MOBILE ? 5 : 10;
+        // Tamaño más pequeño y minimalista
+        const buttonSize = IS_SMALL_MOBILE ? 50 : 55;
+        const buttonSpacing = IS_SMALL_MOBILE ? 3 : 5;
         
-        // Posición base del controlador (esquina inferior izquierda)
-        const baseX = buttonSpacing;
+        // Posición base del controlador (esquina inferior DERECHA)
+        const baseX = SCREEN_WIDTH - (buttonSize * 3 + buttonSpacing * 2) - buttonSpacing;
         const baseY = SCREEN_HEIGHT - buttonSize * 3 - buttonSpacing * 2;
         
         // Crear contenedor para los botones - GUARDAR REFERENCIA
@@ -1170,22 +1202,20 @@ class GameScene extends Phaser.Scene {
         this.virtualControllerContainer.setScrollFactor(0);
         this.virtualControllerContainer.setDepth(2000);
         
-        // Crear gráficos para los botones
-        const buttonGraphics = this.add.graphics();
-        
-        // Función helper para crear un botón
+        // Función helper para crear un botón minimalista
         const createButton = (x, y, icon) => {
-            // Fondo del botón
+            // Fondo del botón más transparente y minimalista
             const bg = this.add.graphics();
-            bg.fillStyle(0x000000, 0.5);
-            bg.fillRoundedRect(x, y, buttonSize, buttonSize, 10);
-            bg.lineStyle(2, 0xFFFFFF, 0.7);
-            bg.strokeRoundedRect(x, y, buttonSize, buttonSize, 10);
+            bg.fillStyle(0x000000, 0.3); // Más transparente
+            bg.fillRoundedRect(x, y, buttonSize, buttonSize, 8);
+            bg.lineStyle(1, 0xFFFFFF, 0.5); // Borde más sutil
+            bg.strokeRoundedRect(x, y, buttonSize, buttonSize, 8);
             
-            // Texto del icono
+            // Texto del icono más pequeño
             const text = this.add.text(x + buttonSize / 2, y + buttonSize / 2, icon, {
-                fontSize: IS_SMALL_MOBILE ? '24px' : '30px',
-                fill: '#FFFFFF'
+                fontSize: IS_SMALL_MOBILE ? '20px' : '24px',
+                fill: '#FFFFFF',
+                alpha: 0.8
             });
             text.setOrigin(0.5);
             
@@ -1215,15 +1245,15 @@ class GameScene extends Phaser.Scene {
             '◀'
         );
         
-        // Centro (no interactivo, solo visual)
+        // Centro - más sutil (opcional, se puede quitar)
         const centerGraphics = this.add.graphics();
-        centerGraphics.fillStyle(0x000000, 0.3);
+        centerGraphics.fillStyle(0x000000, 0.15); // Muy transparente
         centerGraphics.fillRoundedRect(
             baseX + buttonSize + buttonSpacing,
             baseY + buttonSize + buttonSpacing,
             buttonSize,
             buttonSize,
-            10
+            8
         );
         this.virtualControllerContainer.add(centerGraphics);
         
@@ -1243,23 +1273,25 @@ class GameScene extends Phaser.Scene {
         
         // Configurar eventos para cada botón
         const setupButton = (button, direction) => {
-            // Efecto visual al presionar
+            // Efecto visual al presionar - más sutil
             const highlightButton = () => {
                 button.bg.clear();
-                button.bg.fillStyle(0x4444FF, 0.7);
-                button.bg.fillRoundedRect(button.zone.x, button.zone.y, buttonSize, buttonSize, 10);
-                button.bg.lineStyle(3, 0xFFFFFF, 1);
-                button.bg.strokeRoundedRect(button.zone.x, button.zone.y, buttonSize, buttonSize, 10);
-                button.text.setScale(1.1);
+                button.bg.fillStyle(0x4444FF, 0.5); // Más transparente
+                button.bg.fillRoundedRect(button.zone.x, button.zone.y, buttonSize, buttonSize, 8);
+                button.bg.lineStyle(2, 0xFFFFFF, 0.8); // Borde más sutil
+                button.bg.strokeRoundedRect(button.zone.x, button.zone.y, buttonSize, buttonSize, 8);
+                button.text.setScale(1.05); // Escala más sutil
+                button.text.setAlpha(1);
             };
             
             const normalButton = () => {
                 button.bg.clear();
-                button.bg.fillStyle(0x000000, 0.5);
-                button.bg.fillRoundedRect(button.zone.x, button.zone.y, buttonSize, buttonSize, 10);
-                button.bg.lineStyle(2, 0xFFFFFF, 0.7);
-                button.bg.strokeRoundedRect(button.zone.x, button.zone.y, buttonSize, buttonSize, 10);
+                button.bg.fillStyle(0x000000, 0.3); // Más transparente
+                button.bg.fillRoundedRect(button.zone.x, button.zone.y, buttonSize, buttonSize, 8);
+                button.bg.lineStyle(1, 0xFFFFFF, 0.5); // Borde más sutil
+                button.bg.strokeRoundedRect(button.zone.x, button.zone.y, buttonSize, buttonSize, 8);
                 button.text.setScale(1);
+                button.text.setAlpha(0.8);
             };
             
             button.zone.on('pointerdown', () => {
@@ -1544,7 +1576,7 @@ class GameScene extends Phaser.Scene {
         // Iconos adaptados a móvil
         const iconSize = IS_SMALL_MOBILE ? 30 : (IS_MOBILE ? 35 : 40);
         const basketIconX = IS_MOBILE ? 20 : 35;
-        const basketIconY = IS_MOBILE ? SCREEN_HEIGHT - 550 : 78;
+        const basketIconY = IS_MOBILE ? 60 : 78;
         
         // Icono de CESTA (posición adaptada)
         this.basketIcon = this.add.sprite(basketIconX, basketIconY, 'emoji_basket_icon');
@@ -1554,7 +1586,7 @@ class GameScene extends Phaser.Scene {
         
         // Icono de EQUIPAMIENTO (posición adaptada)
         const equipIconX = IS_MOBILE ? SCREEN_WIDTH - 20 : SCREEN_WIDTH - 35;
-        const equipIconY = IS_MOBILE ? SCREEN_HEIGHT - 550 : 78;
+        const equipIconY = IS_MOBILE ? 60 : 78;
         this.equipmentIcon = this.add.sprite(equipIconX, equipIconY, 'emoji_weapons_icon');
         this.equipmentIcon.setDisplaySize(iconSize, iconSize);
         this.equipmentIcon.setScrollFactor(0);
@@ -1616,7 +1648,7 @@ class GameScene extends Phaser.Scene {
 
             const itemSize = IS_SMALL_MOBILE ? 28 : (IS_MOBILE ? 32 : 36);
             const equipmentIconX = IS_MOBILE ? SCREEN_WIDTH - 20 : SCREEN_WIDTH - 35;
-            const equipmentStartY = IS_MOBILE ? SCREEN_HEIGHT - 510 : 120;
+            const equipmentStartY = IS_MOBILE ? 100 : 120;
             const itemSpacing = IS_SMALL_MOBILE ? 38 : (IS_MOBILE ? 42 : 50);
             
             for (let i = 0; i < equipLength; i++) {
@@ -1663,7 +1695,7 @@ class GameScene extends Phaser.Scene {
 
             const itemSize = IS_SMALL_MOBILE ? 28 : (IS_MOBILE ? 32 : 36);
             const basketX = IS_MOBILE ? 20 : 35;
-            const basketStartY = IS_MOBILE ? SCREEN_HEIGHT - 510 : 120;
+            const basketStartY = IS_MOBILE ? 100 : 120;
             const itemSpacing = IS_SMALL_MOBILE ? 38 : (IS_MOBILE ? 42 : 50);
             
             for (let i = 0; i < basketLength; i++) {
