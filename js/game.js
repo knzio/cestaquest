@@ -40,6 +40,12 @@ const TILE = {
     EXIT: 5
 };
 
+// Variables del controlador virtual
+let virtualLeft = false;
+let virtualRight = false;
+let virtualUp = false;
+let virtualDown = false;
+
 // Tipos de enemigos (IAs rebeldes)
 const ENEMY_TYPES = [
     { name: 'Gemini', logo: 'gemini', emojiKey: 'gem', color: 0x8E75B2, emoji: '💎', hp: 4, attack: 1, defense: 0, speed: 1, xp: 1 },
@@ -504,6 +510,11 @@ class GameScene extends Phaser.Scene {
         // Controles
         this.cursors = this.input.keyboard.createCursorKeys();
         this.canMove = true;
+
+        // Controlador virtual (solo para móviles)
+        if (IS_MOBILE) {
+            this.createVirtualController();
+        }
 
         // UI
         this.createUI();
@@ -1012,14 +1023,20 @@ class GameScene extends Phaser.Scene {
     }
     
     showBigMessage(text) {
+        // Tamaños responsive
+        const fontSize = IS_SMALL_MOBILE ? '24px' : (IS_MOBILE ? '32px' : '48px');
+        const strokeThickness = IS_SMALL_MOBILE ? 3 : (IS_MOBILE ? 4 : 6);
+        const maxWidth = IS_MOBILE ? SCREEN_WIDTH - 40 : 600;
+        
         // Crear mensaje grande en el centro de la pantalla
-        const bigText = this.add.text(400, 300, text, {
-            fontSize: '48px',
+        const bigText = this.add.text(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, text, {
+            fontSize: fontSize,
             fill: '#FFFFFF', // Blanco en lugar de dorado
             fontStyle: 'bold',
             align: 'center',
             stroke: '#C41E3A',
-            strokeThickness: 6,
+            strokeThickness: strokeThickness,
+            wordWrap: { width: maxWidth, useAdvancedWrap: true },
             shadow: {
                 offsetX: 3,
                 offsetY: 3,
@@ -1129,6 +1146,213 @@ class GameScene extends Phaser.Scene {
         });
     }
     
+    // ============================================
+    // CONTROLADOR VIRTUAL
+    // ============================================
+    
+    createVirtualController() {
+        // Inicializar variables de estado previo para detectar "JustDown"
+        this.lastVirtualLeft = false;
+        this.lastVirtualRight = false;
+        this.lastVirtualUp = false;
+        this.lastVirtualDown = false;
+        
+        // Tamaño de los botones según el dispositivo
+        const buttonSize = IS_SMALL_MOBILE ? 60 : 70;
+        const buttonSpacing = IS_SMALL_MOBILE ? 5 : 10;
+        
+        // Posición base del controlador (esquina inferior izquierda)
+        const baseX = buttonSpacing;
+        const baseY = SCREEN_HEIGHT - buttonSize * 3 - buttonSpacing * 2;
+        
+        // Crear contenedor para los botones - GUARDAR REFERENCIA
+        this.virtualControllerContainer = this.add.container(0, 0);
+        this.virtualControllerContainer.setScrollFactor(0);
+        this.virtualControllerContainer.setDepth(2000);
+        
+        // Crear gráficos para los botones
+        const buttonGraphics = this.add.graphics();
+        
+        // Función helper para crear un botón
+        const createButton = (x, y, icon) => {
+            // Fondo del botón
+            const bg = this.add.graphics();
+            bg.fillStyle(0x000000, 0.5);
+            bg.fillRoundedRect(x, y, buttonSize, buttonSize, 10);
+            bg.lineStyle(2, 0xFFFFFF, 0.7);
+            bg.strokeRoundedRect(x, y, buttonSize, buttonSize, 10);
+            
+            // Texto del icono
+            const text = this.add.text(x + buttonSize / 2, y + buttonSize / 2, icon, {
+                fontSize: IS_SMALL_MOBILE ? '24px' : '30px',
+                fill: '#FFFFFF'
+            });
+            text.setOrigin(0.5);
+            
+            // Zona interactiva
+            const zone = this.add.zone(x, y, buttonSize, buttonSize);
+            zone.setOrigin(0);
+            zone.setInteractive();
+            zone.setScrollFactor(0);
+            
+            this.virtualControllerContainer.add([bg, text, zone]);
+            
+            return { bg, text, zone };
+        };
+        
+        // Crear botones direccionales en forma de cruz
+        // Arriba
+        const upButton = createButton(
+            baseX + buttonSize + buttonSpacing,
+            baseY,
+            '▲'
+        );
+        
+        // Izquierda
+        const leftButton = createButton(
+            baseX,
+            baseY + buttonSize + buttonSpacing,
+            '◀'
+        );
+        
+        // Centro (no interactivo, solo visual)
+        const centerGraphics = this.add.graphics();
+        centerGraphics.fillStyle(0x000000, 0.3);
+        centerGraphics.fillRoundedRect(
+            baseX + buttonSize + buttonSpacing,
+            baseY + buttonSize + buttonSpacing,
+            buttonSize,
+            buttonSize,
+            10
+        );
+        this.virtualControllerContainer.add(centerGraphics);
+        
+        // Derecha
+        const rightButton = createButton(
+            baseX + buttonSize * 2 + buttonSpacing * 2,
+            baseY + buttonSize + buttonSpacing,
+            '▶'
+        );
+        
+        // Abajo
+        const downButton = createButton(
+            baseX + buttonSize + buttonSpacing,
+            baseY + buttonSize * 2 + buttonSpacing * 2,
+            '▼'
+        );
+        
+        // Configurar eventos para cada botón
+        const setupButton = (button, direction) => {
+            // Efecto visual al presionar
+            const highlightButton = () => {
+                button.bg.clear();
+                button.bg.fillStyle(0x4444FF, 0.7);
+                button.bg.fillRoundedRect(button.zone.x, button.zone.y, buttonSize, buttonSize, 10);
+                button.bg.lineStyle(3, 0xFFFFFF, 1);
+                button.bg.strokeRoundedRect(button.zone.x, button.zone.y, buttonSize, buttonSize, 10);
+                button.text.setScale(1.1);
+            };
+            
+            const normalButton = () => {
+                button.bg.clear();
+                button.bg.fillStyle(0x000000, 0.5);
+                button.bg.fillRoundedRect(button.zone.x, button.zone.y, buttonSize, buttonSize, 10);
+                button.bg.lineStyle(2, 0xFFFFFF, 0.7);
+                button.bg.strokeRoundedRect(button.zone.x, button.zone.y, buttonSize, buttonSize, 10);
+                button.text.setScale(1);
+            };
+            
+            button.zone.on('pointerdown', () => {
+                switch(direction) {
+                    case 'left':
+                        virtualLeft = true;
+                        break;
+                    case 'right':
+                        virtualRight = true;
+                        break;
+                    case 'up':
+                        virtualUp = true;
+                        break;
+                    case 'down':
+                        virtualDown = true;
+                        break;
+                }
+                highlightButton();
+            });
+            
+            button.zone.on('pointerup', () => {
+                switch(direction) {
+                    case 'left':
+                        virtualLeft = false;
+                        break;
+                    case 'right':
+                        virtualRight = false;
+                        break;
+                    case 'up':
+                        virtualUp = false;
+                        break;
+                    case 'down':
+                        virtualDown = false;
+                        break;
+                }
+                normalButton();
+            });
+            
+            button.zone.on('pointerout', () => {
+                switch(direction) {
+                    case 'left':
+                        virtualLeft = false;
+                        break;
+                    case 'right':
+                        virtualRight = false;
+                        break;
+                    case 'up':
+                        virtualUp = false;
+                        break;
+                    case 'down':
+                        virtualDown = false;
+                        break;
+                }
+                normalButton();
+            });
+            
+            // También manejar pointerover para arrastrar el dedo
+            button.zone.on('pointerover', (pointer) => {
+                if (pointer.isDown) {
+                    switch(direction) {
+                        case 'left':
+                            virtualLeft = true;
+                            break;
+                        case 'right':
+                            virtualRight = true;
+                            break;
+                        case 'up':
+                            virtualUp = true;
+                            break;
+                        case 'down':
+                            virtualDown = true;
+                            break;
+                    }
+                    highlightButton();
+                }
+            });
+        };
+        
+        // Configurar todos los botones
+        setupButton(leftButton, 'left');
+        setupButton(rightButton, 'right');
+        setupButton(upButton, 'up');
+        setupButton(downButton, 'down');
+        
+        // Workaround para el bug de botones atascados
+        this.input.on('pointerup', () => {
+            virtualLeft = false;
+            virtualRight = false;
+            virtualUp = false;
+            virtualDown = false;
+        });
+    }
+    
     update() {
         if (!this.canMove) return;
 
@@ -1136,6 +1360,7 @@ class GameScene extends Phaser.Scene {
         let dx = 0;
         let dy = 0;
 
+        // Input del teclado
         if (Phaser.Input.Keyboard.JustDown(this.cursors.left)) {
             dx = -1;
             moved = true;
@@ -1148,6 +1373,29 @@ class GameScene extends Phaser.Scene {
         } else if (Phaser.Input.Keyboard.JustDown(this.cursors.down)) {
             dy = 1;
             moved = true;
+        }
+        
+        // Input del controlador virtual (solo si no se ha movido con el teclado)
+        if (!moved && IS_MOBILE) {
+            if (virtualLeft && !this.lastVirtualLeft) {
+                dx = -1;
+                moved = true;
+            } else if (virtualRight && !this.lastVirtualRight) {
+                dx = 1;
+                moved = true;
+            } else if (virtualUp && !this.lastVirtualUp) {
+                dy = -1;
+                moved = true;
+            } else if (virtualDown && !this.lastVirtualDown) {
+                dy = 1;
+                moved = true;
+            }
+            
+            // Guardar estado anterior para detectar "JustDown"
+            this.lastVirtualLeft = virtualLeft;
+            this.lastVirtualRight = virtualRight;
+            this.lastVirtualUp = virtualUp;
+            this.lastVirtualDown = virtualDown;
         }
 
         if (moved) {
@@ -1296,7 +1544,7 @@ class GameScene extends Phaser.Scene {
         // Iconos adaptados a móvil
         const iconSize = IS_SMALL_MOBILE ? 30 : (IS_MOBILE ? 35 : 40);
         const basketIconX = IS_MOBILE ? 20 : 35;
-        const basketIconY = IS_MOBILE ? SCREEN_HEIGHT - 190 : 78;
+        const basketIconY = IS_MOBILE ? SCREEN_HEIGHT - 550 : 78;
         
         // Icono de CESTA (posición adaptada)
         this.basketIcon = this.add.sprite(basketIconX, basketIconY, 'emoji_basket_icon');
@@ -1306,7 +1554,7 @@ class GameScene extends Phaser.Scene {
         
         // Icono de EQUIPAMIENTO (posición adaptada)
         const equipIconX = IS_MOBILE ? SCREEN_WIDTH - 20 : SCREEN_WIDTH - 35;
-        const equipIconY = IS_MOBILE ? SCREEN_HEIGHT - 190 : 78;
+        const equipIconY = IS_MOBILE ? SCREEN_HEIGHT - 550 : 78;
         this.equipmentIcon = this.add.sprite(equipIconX, equipIconY, 'emoji_weapons_icon');
         this.equipmentIcon.setDisplaySize(iconSize, iconSize);
         this.equipmentIcon.setScrollFactor(0);
@@ -1349,7 +1597,7 @@ class GameScene extends Phaser.Scene {
 
         // Posición de stats adaptada
         const equipmentX = IS_MOBILE ? SCREEN_WIDTH - 80 : SCREEN_WIDTH - 150; 
-        const statsY = IS_MOBILE ? SCREEN_HEIGHT - 250 : 60;
+        const statsY = IS_MOBILE ? SCREEN_HEIGHT - 330 : 60;
         
         this.statsText.setPosition(equipmentX, statsY);
         this.statsText.setText(
@@ -1368,7 +1616,7 @@ class GameScene extends Phaser.Scene {
 
             const itemSize = IS_SMALL_MOBILE ? 28 : (IS_MOBILE ? 32 : 36);
             const equipmentIconX = IS_MOBILE ? SCREEN_WIDTH - 20 : SCREEN_WIDTH - 35;
-            const equipmentStartY = IS_MOBILE ? SCREEN_HEIGHT - 150 : 120;
+            const equipmentStartY = IS_MOBILE ? SCREEN_HEIGHT - 510 : 120;
             const itemSpacing = IS_SMALL_MOBILE ? 38 : (IS_MOBILE ? 42 : 50);
             
             for (let i = 0; i < equipLength; i++) {
@@ -1415,7 +1663,7 @@ class GameScene extends Phaser.Scene {
 
             const itemSize = IS_SMALL_MOBILE ? 28 : (IS_MOBILE ? 32 : 36);
             const basketX = IS_MOBILE ? 20 : 35;
-            const basketStartY = IS_MOBILE ? SCREEN_HEIGHT - 150 : 120;
+            const basketStartY = IS_MOBILE ? SCREEN_HEIGHT - 510 : 120;
             const itemSpacing = IS_SMALL_MOBILE ? 38 : (IS_MOBILE ? 42 : 50);
             
             for (let i = 0; i < basketLength; i++) {
@@ -1481,6 +1729,11 @@ class GameScene extends Phaser.Scene {
     victory() {
         this.canMove = false;
         
+        // Ocultar controlador virtual en móviles
+        if (IS_MOBILE && this.virtualControllerContainer) {
+            this.virtualControllerContainer.setVisible(false);
+        }
+        
         // Guardar resultado en localStorage
         this.saveGameResult(true);
         
@@ -1490,6 +1743,11 @@ class GameScene extends Phaser.Scene {
 
     gameOver() {
         this.canMove = false;
+        
+        // Ocultar controlador virtual en móviles
+        if (IS_MOBILE && this.virtualControllerContainer) {
+            this.virtualControllerContainer.setVisible(false);
+        }
         
         // Guardar resultado en localStorage
         this.saveGameResult(false);
