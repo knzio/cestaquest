@@ -505,11 +505,41 @@ class GameScene extends Phaser.Scene {
             this.containers.push(containerData);
         }
         
-        // Colocar salida
-        const exitPos = generator.rooms[generator.rooms.length - 1];
+        // Colocar salida (asegurar que no coincide con ningún paquete ni item)
+        let exitPosition;
+        let attempts = 0;
+        const maxExitAttempts = 100;
+        
+        do {
+            exitPosition = generator.getRandomFloorTile();
+            attempts++;
+            
+            // Verificar que no coincide con ningún contenedor
+            const overlapsContainer = this.containers.some(c => 
+                c.x === exitPosition.x && c.y === exitPosition.y
+            );
+            
+            // Verificar que no coincide con el jugador
+            const overlapsPlayer = (exitPosition.x === this.player.x && exitPosition.y === this.player.y);
+            
+            // Verificar que no coincide con ningún enemigo
+            const overlapsEnemy = this.enemies.some(e => 
+                e.x === exitPosition.x && e.y === exitPosition.y
+            );
+            
+            // Verificar que no coincide con ningún item en el suelo
+            const overlapsItem = this.items.some(i => 
+                i.x === exitPosition.x && i.y === exitPosition.y
+            );
+            
+            if (!overlapsContainer && !overlapsPlayer && !overlapsEnemy && !overlapsItem) {
+                break;
+            }
+        } while (attempts < maxExitAttempts);
+        
         this.exit = {
-            x: Math.floor(exitPos.x + exitPos.w / 2),
-            y: Math.floor(exitPos.y + exitPos.h / 2)
+            x: exitPosition.x,
+            y: exitPosition.y
         };
         this.exit.id = 'exit';
 
@@ -975,6 +1005,11 @@ class GameScene extends Phaser.Scene {
                             break;
                         }
                     }
+                }
+                
+                // Verificar colisión con el árbol de salida
+                if (!blocked && this.exit && this.exit.x === newX && this.exit.y === newY) {
+                    blocked = true;
                 }
                 
                 if (!blocked) {
@@ -1539,6 +1574,7 @@ class GameScene extends Phaser.Scene {
         });
         this.logText.setScrollFactor(0);
         this.logText.setDepth(100);
+        this.logText.setVisible(!IS_MOBILE); // Ocultar en móvil
 
         // Emoji del jugador en UI usando Twemoji
         const emojiSize = IS_SMALL_MOBILE ? 24 : (IS_MOBILE ? 28 : 32);
@@ -1559,16 +1595,13 @@ class GameScene extends Phaser.Scene {
         this.xpText.setScrollFactor(0);
         this.xpText.setDepth(101);
 
-        const enemyEmojiFontSize = IS_SMALL_MOBILE ? '20px' : (IS_MOBILE ? '24px' : '28px');
-        this.enemyHealthEmoji = this.add.text(0, 0, '', {
-            fontSize: enemyEmojiFontSize,
-            lineSpacing: 0,
-            padding: { top: 8, bottom: 2 }
-        });
-        this.enemyHealthEmoji.setOrigin(0, 0.5);
-        this.enemyHealthEmoji.setScrollFactor(0);
-        this.enemyHealthEmoji.setDepth(101);
-        this.enemyHealthEmoji.setVisible(false);
+        const enemyEmojiSize = IS_SMALL_MOBILE ? 28 : (IS_MOBILE ? 32 : 36);
+        this.enemyHealthSprite = this.add.sprite(0, 0, 'emoji_player'); // Temporal, se cambiará dinámicamente
+        this.enemyHealthSprite.setDisplaySize(enemyEmojiSize, enemyEmojiSize);
+        this.enemyHealthSprite.setOrigin(0, 0.5);
+        this.enemyHealthSprite.setScrollFactor(0);
+        this.enemyHealthSprite.setDepth(101);
+        this.enemyHealthSprite.setVisible(false);
 
         this.equippedGearTexts = [];
         this.basketItemsTexts = [];
@@ -1583,6 +1616,32 @@ class GameScene extends Phaser.Scene {
         this.basketIcon.setDisplaySize(iconSize, iconSize);
         this.basketIcon.setScrollFactor(0);
         this.basketIcon.setDepth(101);
+        
+        // Contador de notificaciones de la cesta (círculo amarillo con número)
+        const counterSize = IS_SMALL_MOBILE ? 18 : (IS_MOBILE ? 20 : 22);
+        const counterOffsetX = iconSize * 0.35; // Posición en esquina superior derecha
+        const counterOffsetY = -iconSize * 0.35;
+        
+        // Círculo amarillo de fondo
+        this.basketCounterCircle = this.add.graphics();
+        this.basketCounterCircle.setScrollFactor(0);
+        this.basketCounterCircle.setDepth(102);
+        
+        // Texto del contador
+        const counterFontSize = IS_SMALL_MOBILE ? '11px' : (IS_MOBILE ? '12px' : '14px');
+        this.basketCounterText = this.add.text(
+            basketIconX + counterOffsetX,
+            basketIconY + counterOffsetY,
+            '0',
+            {
+                fontSize: counterFontSize,
+                fill: '#000000',
+                fontStyle: 'bold'
+            }
+        );
+        this.basketCounterText.setOrigin(0.5);
+        this.basketCounterText.setScrollFactor(0);
+        this.basketCounterText.setDepth(103);
         
         // Icono de EQUIPAMIENTO (posición adaptada)
         const equipIconX = IS_MOBILE ? SCREEN_WIDTH - 20 : SCREEN_WIDTH - 35;
@@ -1601,6 +1660,7 @@ class GameScene extends Phaser.Scene {
         });
         this.statsText.setScrollFactor(0);
         this.statsText.setDepth(101);
+        this.statsText.setVisible(!IS_MOBILE); // Ocultar en móvil
 
         this.updateUI();
     }
@@ -1687,6 +1747,28 @@ class GameScene extends Phaser.Scene {
         const basketLength = this.basketItems.length;
         const prevBasketLength = this.basketItemsTexts.length;
         
+        // Actualizar contador de notificaciones de la cesta
+        const counterSize = IS_SMALL_MOBILE ? 18 : (IS_MOBILE ? 20 : 22);
+        const basketIconX = IS_MOBILE ? 20 : 35;
+        const basketIconY = IS_MOBILE ? 60 : 78;
+        const iconSize = IS_SMALL_MOBILE ? 30 : (IS_MOBILE ? 35 : 40);
+        const counterOffsetX = iconSize * 0.35;
+        const counterOffsetY = -iconSize * 0.35;
+        
+        this.basketCounterCircle.clear();
+        this.basketCounterCircle.fillStyle(0xFFD700, 1); // Amarillo dorado
+        this.basketCounterCircle.fillCircle(
+            basketIconX + counterOffsetX,
+            basketIconY + counterOffsetY,
+            counterSize / 2
+        );
+        
+        this.basketCounterText.setText(`${basketLength}`);
+        this.basketCounterText.setPosition(
+            basketIconX + counterOffsetX,
+            basketIconY + counterOffsetY
+        );
+        
         if (basketLength !== prevBasketLength) {
             for (let i = 0; i < prevBasketLength; i++) {
                 this.basketItemsTexts[i].destroy();
@@ -1735,10 +1817,19 @@ class GameScene extends Phaser.Scene {
             const enemyBarWidth = this.enemyInCombat.maxHp * (tileSize + 2);
             const enemyStartX = (gameWidth - enemyBarWidth) / 2;
 
-            this.enemyHealthEmoji.setText(this.enemyInCombat.emoji);
-            const enemyEmojiOffset = IS_SMALL_MOBILE ? 25 : (IS_MOBILE ? 30 : 40);
-            this.enemyHealthEmoji.setPosition(enemyStartX - enemyEmojiOffset, enemyY + tileSize/2);
-            this.enemyHealthEmoji.setVisible(true);
+            const enemyEmojiOffset = IS_SMALL_MOBILE ? 30 : (IS_MOBILE ? 35 : 42);
+            const enemyEmojiSize = IS_SMALL_MOBILE ? 28 : (IS_MOBILE ? 32 : 36);
+            
+            // Intentar usar logo primero, luego emoji sprite, luego fallback
+            if (this.enemyInCombat.logo && this.textures.exists(this.enemyInCombat.logo)) {
+                this.enemyHealthSprite.setTexture(this.enemyInCombat.logo);
+            } else if (this.textures.exists(`emoji_${this.enemyInCombat.emojiKey}`)) {
+                this.enemyHealthSprite.setTexture(`emoji_${this.enemyInCombat.emojiKey}`);
+            }
+            
+            this.enemyHealthSprite.setDisplaySize(enemyEmojiSize, enemyEmojiSize);
+            this.enemyHealthSprite.setPosition(enemyStartX - enemyEmojiOffset, enemyY + tileSize/2);
+            this.enemyHealthSprite.setVisible(true);
 
             for (let i = 0; i < this.enemyInCombat.maxHp; i++) {
                 const x = enemyStartX + i * (tileSize + 2);
@@ -1746,7 +1837,7 @@ class GameScene extends Phaser.Scene {
                 this.healthBarGraphics.fillRoundedRect(x, enemyY, tileSize, tileSize, 4);
             }
         } else {
-            this.enemyHealthEmoji.setVisible(false);
+            this.enemyHealthSprite.setVisible(false);
         }
     }
 
@@ -1812,9 +1903,9 @@ class GameScene extends Phaser.Scene {
     }
     
     showSummaryScreen(won) {
-        // Overlay oscuro (sin interacción)
+        // Overlay oscuro (sin interacción) - más claro
         const overlay = this.add.graphics();
-        overlay.fillStyle(0x000000, 0.85);
+        overlay.fillStyle(0x000000, 0.70); // Cambiado de 0.85 a 0.70 para más claridad
         overlay.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
         overlay.setScrollFactor(0);
         overlay.setDepth(1000);
