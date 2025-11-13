@@ -85,6 +85,153 @@
             animation-delay: 1.5s;
         }
         
+        /* Botón de ayuda */
+        .help-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #c41e3a;
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            border: 3px solid #f5f5dc;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .help-button:hover {
+            background: #a01830;
+            transform: scale(1.1);
+        }
+        
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: linear-gradient(135deg, #2d5a3d 0%, #1a472a 100%);
+            border: 4px solid #c41e3a;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 600px;
+            width: calc(100% - 20px);
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 0 40px rgba(196, 30, 58, 0.6);
+            color: #f5f5dc;
+            box-sizing: border-box;
+            margin: auto;
+        }
+        
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: #c41e3a;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            border: 2px solid #f5f5dc;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        
+        .modal-close:hover {
+            background: #a01830;
+            transform: rotate(90deg);
+        }
+        
+        .modal-title {
+            font-size: 28px;
+            color: #c41e3a;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            margin: 0 0 20px 0;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .modal-section {
+            margin-bottom: 20px;
+        }
+        
+        .modal-section h3 {
+            color: #FFD700;
+            font-size: 18px;
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .modal-section p {
+            margin: 5px 0;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+        
+        .enemy-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .enemy-item {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .inline-icon {
+            width: 20px;
+            height: 20px;
+            vertical-align: middle;
+            display: inline-block;
+            margin: 0 2px;
+        }
+        
+        .enemy-icon {
+            width: 24px;
+            height: 24px;
+            display: inline-block;
+        }
+        
         /* Responsive para móviles */
         @media (max-width: 768px) {
             body {
@@ -110,6 +257,48 @@
                 font-size: 20px;
                 gap: 10px;
             }
+            
+            .help-button {
+                width: 45px;
+                height: 45px;
+                font-size: 24px;
+                top: 15px;
+                right: 15px;
+            }
+            
+            .modal-overlay {
+                padding: 10px;
+            }
+            
+            .modal-content {
+                padding: 20px;
+                max-height: calc(100vh - 30px);
+                width: calc(100% - 20px);
+                border-width: 3px;
+            }
+            
+            .modal-title {
+                font-size: 22px;
+                margin-bottom: 15px;
+            }
+            
+            .modal-section {
+                margin-bottom: 15px;
+            }
+            
+            .modal-section h3 {
+                font-size: 16px;
+            }
+            
+            .modal-section p {
+                font-size: 13px;
+                line-height: 1.5;
+            }
+            
+            .enemy-list {
+                grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+                gap: 8px;
+            }
         }
         
         @media (max-width: 480px) {
@@ -133,6 +322,119 @@
                 font-size: 18px;
                 gap: 8px;
             }
+            
+            .help-button {
+                width: 40px;
+                height: 40px;
+                font-size: 20px;
+                top: 10px;
+                right: 10px;
+            }
+            
+            .modal-overlay {
+                padding: 5px;
+            }
+            
+            .modal-content {
+                padding: 15px;
+                border-width: 2px;
+                width: calc(100% - 10px);
+                max-height: calc(100vh - 20px);
+            }
+            
+            .modal-title {
+                font-size: 18px;
+                margin-bottom: 12px;
+            }
+            
+            .modal-section {
+                margin-bottom: 12px;
+            }
+            
+            .modal-section h3 {
+                font-size: 14px;
+                margin: 8px 0 5px 0;
+            }
+            
+            .modal-section p {
+                font-size: 12px;
+                line-height: 1.4;
+                margin: 3px 0;
+            }
+            
+            .enemy-list {
+                grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+                gap: 6px;
+            }
+            
+            .enemy-item {
+                font-size: 11px;
+                padding: 5px 8px;
+                gap: 4px;
+            }
+            
+            .inline-icon {
+                width: 16px;
+                height: 16px;
+            }
+            
+            .enemy-icon {
+                width: 18px;
+                height: 18px;
+            }
+            
+            .modal-close {
+                width: 28px;
+                height: 28px;
+                font-size: 18px;
+                top: 8px;
+                right: 8px;
+            }
+        }
+        
+        @media (max-width: 360px) {
+            .modal-overlay {
+                padding: 5px;
+            }
+            
+            .modal-content {
+                padding: 12px;
+                width: calc(100% - 10px);
+                max-height: calc(100vh - 20px);
+            }
+            
+            .modal-title {
+                font-size: 16px;
+                margin-bottom: 10px;
+            }
+            
+            .modal-section h3 {
+                font-size: 13px;
+            }
+            
+            .modal-section p {
+                font-size: 11px;
+            }
+            
+            .enemy-list {
+                grid-template-columns: 1fr 1fr;
+                gap: 5px;
+            }
+            
+            .enemy-item {
+                font-size: 10px;
+                padding: 4px 6px;
+            }
+            
+            .inline-icon {
+                width: 14px;
+                height: 14px;
+            }
+            
+            .enemy-icon {
+                width: 16px;
+                height: 16px;
+            }
         }
     </style>
 </head>
@@ -147,6 +449,87 @@
             <span>⭐</span>
         </div>
     </div>
+    
+    <!-- Botón de ayuda -->
+    <button class="help-button" id="helpButton" aria-label="Ayuda">?</button>
+    
+    <!-- Modal de ayuda -->
+    <div class="modal-overlay" id="helpModal">
+        <div class="modal-content">
+            <button class="modal-close" id="closeModal" aria-label="Cerrar">×</button>
+            
+            <h2 class="modal-title">🎄 ¿Cómo jugar? 🎄</h2>
+            
+            <div class="modal-section">
+                <h3>🎯 Objetivo</h3>
+                <p>Recupera los <strong>5 productos de tu cesta navideña</strong> y corre al <strong><img src="assets/emojis/exit.png" class="inline-icon"> árbol de Navidad</strong> para escapar de la oficina.</p>
+            </div>
+            
+            <div class="modal-section">
+                <h3>🎮 Controles</h3>
+                <p><strong>PC:</strong> Usa las flechas del teclado (←↑↓→) para moverte.</p>
+                <p><strong>Móvil:</strong> Usa los botones de dirección en la esquina inferior derecha.</p>
+            </div>
+            
+            <div class="modal-section">
+                <h3>🤖 Enemigos (IAs rebeldes)</h3>
+                <p>Enfréntate a las IAs que se han rebelado en la oficina:</p>
+                <div class="enemy-list">
+                    <div class="enemy-item"><img src="assets/logos/gemini.svg" class="enemy-icon"> Gemini</div>
+                    <div class="enemy-item"><img src="assets/logos/copilot.png" class="enemy-icon"> Copilot</div>
+                    <div class="enemy-item"><img src="assets/logos/openai.svg" class="enemy-icon"> ChatGPT</div>
+                    <div class="enemy-item"><img src="assets/logos/claude.svg" class="enemy-icon"> Claude</div>
+                    <div class="enemy-item"><img src="assets/logos/deepseek.svg" class="enemy-icon"> DeepSeek</div>
+                    <div class="enemy-item"><img src="assets/logos/apple.svg" class="enemy-icon"> Apple AI</div>
+                    <div class="enemy-item"><img src="assets/logos/grok.svg" class="enemy-icon"> Grok</div>
+                </div>
+            </div>
+            
+            <div class="modal-section">
+                <h3>📦 Paquetes y objetos</h3>
+                <p>Abre paquetes (<img src="assets/emojis/gift.png" class="inline-icon"> <img src="assets/emojis/box.png" class="inline-icon"> <img src="assets/emojis/snowman.png" class="inline-icon"> <img src="assets/emojis/trash.png" class="inline-icon">) para encontrar objetos útiles:</p>
+                <p>• <img src="assets/emojis/coffee.png" class="inline-icon"> <strong>Café:</strong> Recupera 5 puntos de vida</p>
+                <p>• <img src="assets/emojis/pencil.png" class="inline-icon"><img src="assets/emojis/keyboard.png" class="inline-icon"><img src="assets/emojis/mouse.png" class="inline-icon"> <strong>Armas:</strong> Aumentan tu ataque</p>
+                <p>• <img src="assets/emojis/shield.png" class="inline-icon"> <strong>Escudo:</strong> Aumenta tu defensa</p>
+                <p>• <img src="assets/emojis/chocolate.png" class="inline-icon"><img src="assets/emojis/champagne.png" class="inline-icon"><img src="assets/emojis/meat.png" class="inline-icon"><img src="assets/emojis/cheese.png" class="inline-icon"><img src="assets/emojis/candy.png" class="inline-icon"><img src="assets/emojis/mooncake.png" class="inline-icon"> <strong>Cesta:</strong> Los 5 objetos que debes encontrar</p>
+            </div>
+            
+            <div class="modal-section">
+                <h3>⚔️ Combate</h3>
+                <p>Ataca a los enemigos moviéndote hacia ellos. Sube de nivel al derrotarlos y aumenta tu fuerza.</p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Control del modal
+        const helpButton = document.getElementById('helpButton');
+        const helpModal = document.getElementById('helpModal');
+        const closeModal = document.getElementById('closeModal');
+        
+        helpButton.addEventListener('click', () => {
+            helpModal.classList.add('active');
+        });
+        
+        closeModal.addEventListener('click', () => {
+            helpModal.classList.remove('active');
+        });
+        
+        // Cerrar al hacer clic fuera del modal
+        helpModal.addEventListener('click', (e) => {
+            if (e.target === helpModal) {
+                helpModal.classList.remove('active');
+            }
+        });
+        
+        // Cerrar con la tecla Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && helpModal.classList.contains('active')) {
+                helpModal.classList.remove('active');
+            }
+        });
+    </script>
+    
     <script src="js/game.js"></script>
 </body>
 </html>

@@ -1228,9 +1228,9 @@ class GameScene extends Phaser.Scene {
         const buttonSize = IS_SMALL_MOBILE ? 50 : 55;
         const buttonSpacing = IS_SMALL_MOBILE ? 3 : 5;
         
-        // Posición base del controlador (esquina inferior DERECHA)
+        // Posición base del controlador (esquina inferior DERECHA) - MÁS BAJO
         const baseX = SCREEN_WIDTH - (buttonSize * 3 + buttonSpacing * 2) - buttonSpacing;
-        const baseY = SCREEN_HEIGHT - buttonSize * 3 - buttonSpacing * 2;
+        const baseY = SCREEN_HEIGHT - (buttonSize * 2 + buttonSpacing) - buttonSpacing; // Cambiado de 3 a 2 botones de altura
         
         // Crear contenedor para los botones - GUARDAR REFERENCIA
         this.virtualControllerContainer = this.add.container(0, 0);
@@ -1265,7 +1265,7 @@ class GameScene extends Phaser.Scene {
             return { bg, text, zone };
         };
         
-        // Crear botones direccionales en forma de cruz
+        // Crear botones direccionales en forma de cruz compacta
         // Arriba
         const upButton = createButton(
             baseX + buttonSize + buttonSpacing,
@@ -1280,30 +1280,18 @@ class GameScene extends Phaser.Scene {
             '◀'
         );
         
-        // Centro - más sutil (opcional, se puede quitar)
-        const centerGraphics = this.add.graphics();
-        centerGraphics.fillStyle(0x000000, 0.15); // Muy transparente
-        centerGraphics.fillRoundedRect(
+        // Centro - AHORA ES EL BOTÓN DE ABAJO
+        const downButton = createButton(
             baseX + buttonSize + buttonSpacing,
             baseY + buttonSize + buttonSpacing,
-            buttonSize,
-            buttonSize,
-            8
+            '▼'
         );
-        this.virtualControllerContainer.add(centerGraphics);
         
         // Derecha
         const rightButton = createButton(
             baseX + buttonSize * 2 + buttonSpacing * 2,
             baseY + buttonSize + buttonSpacing,
             '▶'
-        );
-        
-        // Abajo
-        const downButton = createButton(
-            baseX + buttonSize + buttonSpacing,
-            baseY + buttonSize * 2 + buttonSpacing * 2,
-            '▼'
         );
         
         // Configurar eventos para cada botón
